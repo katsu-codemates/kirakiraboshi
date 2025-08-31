@@ -1,36 +1,38 @@
-FROM python:3.10-slim
+# ベースイメージ
+FROM python:3.11-slim
 
-# 必要なツール類をインストール
+# 必要パッケージのインストール
 RUN apt-get update && apt-get install -y \
-    wget gnupg unzip curl \
+    wget \
+    unzip \
+    curl \
+    gnupg2 \
+    apt-transport-https \
+    ca-certificates \
+    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
-# Google Chrome のインストール（apt-keyではなくgpgを利用）
-RUN mkdir -p /usr/share/keyrings \
-    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub \
-       | gpg --dearmor -o /usr/share/keyrings/google-linux-signing-keyring.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux-signing-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
-       > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update && apt-get install -y google-chrome-stable
+# Google Chrome のインストール
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" \
+        > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && apt-get install -y google-chrome-stable && \
+    rm -rf /var/lib/apt/lists/*
 
-# ChromeDriver のインストール
-RUN DRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE") && \
+# Chrome のバージョンに合わせた ChromeDriver をインストール
+RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d. -f1) && \
+    DRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}") && \
     wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip" && \
     unzip /tmp/chromedriver.zip -d /usr/local/bin/ && \
     rm /tmp/chromedriver.zip
 
-# 作業ディレクトリ
+# Python ライブラリのインストール
 WORKDIR /app
-
-# 依存関係をインストール
-COPY requirements.txt requirements.txt
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ソースコードをコピー
+# アプリケーションのコピー
 COPY . .
 
-# Flaskを外部公開
-ENV PORT=5000
-EXPOSE 5000
-
+# Flask / FastAPI / Streamlit などに応じて修正
 CMD ["python", "app.py"]

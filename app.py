@@ -20,8 +20,8 @@ def fetch_table_html():
 
     try:
         # 本番では環境変数からメールアドレスとパスワードを取得する
-        email = os.getenv("AUTOSNS_EMAIL", "test@example.com")
-        password = os.getenv("AUTOSNS_PASS", "password123")
+        email = os.getenv("AUTOSNS_EMAIL", "katsudonburi.2005@gmail.com")
+        password = os.getenv("AUTOSNS_PASS", "katsu_s2005")
 
         driver.get('https://autosns.jp/login?uid=aitjvh&e=' + email)
         driver.find_element(By.NAME,"password").send_keys(password)
